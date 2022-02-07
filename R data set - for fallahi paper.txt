@@ -1,0 +1,81 @@
+# create data set as Comsol Output; and Python Input
+round(rnorm(50, mean = 5.5, sd = 2.36), digits = 2)
+# values produced are : 
+#{ [1]  4.20  2.16  6.58  3.87  7.00  %6.53  %7.16  9.01  3.66  %1.67  7.18  4.55
+#[13]  4.32  6.78  6.37 10.37  8.05  3.97  4.41  7.48  3.32 11.12  6.22  6.25
+#[25]  2.19  8.67  5.19  4.16  4.92  6.91 -0.54  6.88  9.25  9.50  6.11  4.94
+#[37]  4.03  4.07  4.19  4.06  4.27  7.75  5.69  4.94  7.36  7.38  6.03  5.25
+#[49]  6.56  8.02 }
+
+library(tidyverse)
+library(truncnorm)
+
+setwd('D:/Learning/Deep Learning A-Z course - my files/Section 8 Deep Learning/Deep Learning for Droplet D by  Comsol')
+
+# Flow : Q, freq, Regime
+q.c.12 <- seq(from = 12.5, to = 12.5, length.out = 100)
+q.d.12 <- rtruncnorm(n = 100, a = 0, b = Inf, mean = 3, sd = 2)
+q.ratio.12 <- q.c.12 / q.d.12
+d.12 <- rtruncnorm(n = 100, a = 0, b = Inf, mean = 600, sd = 150)
+freq.12 <- rtruncnorm(n = 100, a = 0, b = Inf, mean = .5, sd = .1)
+
+q.c.25 <- seq(from = 25, to = 25, length.out = 100)
+q.d.25 <- rtruncnorm(n = 100, a = 0, b = Inf, mean = 5, sd = 3)
+q.ratio.25 <- q.c.25 / q.d.25
+d.25 <- rtruncnorm(n = 100, a = 0, b = Inf, mean = 500, sd = 180)
+freq.25 <- rtruncnorm(n = 100, a = 0, b = Inf, mean = 1.2, sd = .2)
+
+q.c.37 <- seq(from = 37.5, to = 37.5, length.out = 100)
+q.d.37 <- rtruncnorm(n = 100, a = 0, b = Inf, mean = 7.5, sd = 4)
+q.ratio.37 <- q.c.37 / q.d.37
+d.37 <- rtruncnorm(n = 100, a = 0, b = Inf, mean = 430, sd = 200)
+freq.37 <- rtruncnorm(n = 100, a = 0, b = Inf, mean = 1.75, sd = .4)
+
+q.c.50 <- seq(from = 50, to = 50, length.out = 100)
+q.d.50 <- rtruncnorm(n = 100, a = 0, b = Inf, mean = 9, sd = 4.8)
+q.ratio.50 <- q.c.50 / q.d.50
+d.50 <- rtruncnorm(n = 100, a = 0, b = Inf, mean = 380, sd = 220)
+freq.50 <- rtruncnorm(n = 100, a = 0, b = Inf, mean = 2.7, sd = .6)
+
+# Flow Regime : Categorical
+regime.1 <- as.factor(c(seq(from = 1, to = 1, length.out = 50), seq(from = 2, to = 2, length.out = 50)))
+regime.2 <- as.factor(c(seq(from = 1, to = 1, length.out = 50), seq(from = 2, to = 2, length.out = 50)))
+regime.3 <- as.factor(c(seq(from = 1, to = 1, length.out = 50), seq(from = 2, to = 2, length.out = 50)))
+regime.4 <- as.factor(c(seq(from = 1, to = 1, length.out = 50), seq(from = 2, to = 2, length.out = 50)))
+
+
+dataset <- as_tibble(data.frame(D = c(d.12, d.25, d.37, d.50),
+                                q.c = c(q.c.12, q.c.25, q.c.37, q.c.50),
+                                q.d = c(q.d.12, q.d.25, q.d.37, q.d.50),
+                                q.ratio = c(q.ratio.12, q.ratio.25, q.ratio.37, q.ratio.50),
+                                freq = c(freq.12, freq.25, freq.37, freq.50),
+                                regime = c(regime.1, regime.2, regime.3, regime.4)))
+
+# Reynolds number 
+oil.density <-  915.3 # kg/m3 , T = 22 C
+oil.daynamicviscosity <- 59.2*10^(-3) # miu , Pa.s , T = 22 C
+water.density <-  998.2 # kg/m3 , T = 20 C
+water.daynamicviscosity <-  1.002*10^(-3) # miu, Pa.s, T = 20 C
+
+channel.d <- 500*10^(-6) # m
+channel.A <- 3.14*(channel.d^2)/4 # m2
+
+re.d <- water.density*(dataset$q.d*10^(-6)/3600)*channel.d/(water.daynamicviscosity*channel.A)
+re.c <- oil.density*(dataset$q.c*10^(-6)/3600)*channel.d/(oil.daynamicviscosity*channel.A)
+
+dataset <- mutate(dataset, re.d = re.d)
+dataset <- mutate(dataset, re.c = re.c)
+dataset <- mutate(dataset, re.ratio = as.factor(round(re.c/re.d , digits = 1)))
+
+head(dataset)
+# Capillary number = miu*V/(sigma) ; 
+# could be CATEGORICAL to show the effect of SURFACTANT, specially on t!
+
+
+# Sigma.Ratio, Miu.Ratio, Rhuo.Ratio
+# could be CATEGORICAL to show the effect of Substance, specially on t!
+
+# Geometrical data = Angle, length, oriffice, ...
+# or, could be CATEGORICAL --> T-Junction, Flow-focusing, Co-flow
+
+write.csv(dataset, file = 'Deep Learning.csv')
