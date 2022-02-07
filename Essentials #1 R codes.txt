@@ -1,0 +1,163 @@
+
+##### Data Pre-Processing / THESIS#####
+setwd("D:/Learning/Deep Learning A-Z course - my files/Section 8 Deep Learning/Deep Learning for Droplet D by  Comsol/MSc Thesis Data for Machine Learning")
+thesis_data <- read.csv("Essentials#1- #Processed Data - Copy of Results.xlsx - Sheet1.csv")
+colnames(x = thesis_data) <- c('v_disp_horiz','v_cont_vert','miu_disp','miu_cont', 'surface_t', 'd','f','Ca_disp','Re_disp','Q_rel','Miu_rel','Ca*d - new Feature','Catg','new Regime Class','t1','t2','rho_d')
+thesis_data <- thesis_data[, 1:14]
+thesis_data$Catg <- as.factor(thesis_data$Catg)
+#write.csv(thesis_data, "Essentials Output#1- Processed with R - Comsol data for python.csv")
+#write.csv(thesis_data, "Essentials Output#2- Processed with R - Comsol data for python.csv")
+library(ggplot2)
+library(plotly)
+library(hrbrthemes)
+library(dplyr)
+library(readr)
+
+# Miu_disp vs d,f
+ggplot(data = thesis_data[20:29,], aes(x = miu_disp, y = d))+
+  geom_point(color='red')+
+  geom_smooth(method = "lm", se = FALSE) 
+
+ggplot(data = thesis_data[20:29,], aes(x = miu_disp, y = f))+
+  geom_point(color='red')+
+  geom_smooth(method = "lm", se = FALSE) 
+
+# Surface TEsnsion  vs d,f
+ggplot(data = thesis_data[30:42,], aes(x = surface_t, y = d))+
+  geom_point(color='orange')+
+  geom_smooth(method = "lm", se = FALSE)
+
+ggplot(data = thesis_data[30:42,], aes(x = surface_t, y = f))+
+  geom_point(color='orange')+
+  geom_smooth(method = "lm", se = FALSE)+
+  xlim(c(0,15))
+
+# Velocity_disp vs d,f
+ggplot(data = thesis_data[43:51,], aes(x = v_disp_horiz, y = d))+
+  geom_point()+
+  geom_smooth(method = "lm", se = FALSE)
+
+ggplot(data = thesis_data[43:51,], aes(x = v_disp_horiz, y = f))+
+  geom_point()+
+  geom_smooth(method = "lm", se = FALSE)
+
+# 3D plots
+library(plotly)
+calc_for_d_1 <-
+  plot_ly(x = thesis_data$Ca_disp, y = thesis_data$Re_disp,
+        z = thesis_data$d, type = 'mesh3d',
+        intensity = ~thesis_data$d,
+        colors = colorRamp(c('green', "yellow", "orange", "red")))%>%
+  layout(title = 'Ca & Re on D',
+         scene = list(xaxis = list(title = "Ca"),
+                      yaxis = list(title = "Re"),
+                      zaxis = list(title = "d")))
+calc_for_d_1
+
+calc_for_d_2 <-
+  plot_ly(x = thesis_data$Q_rel, y = thesis_data$Miu_rel,
+          z = thesis_data$d, type = 'mesh3d',
+          intensity = ~thesis_data$d,
+          colors = colorRamp(c('green', "yellow", "orange", "red")))%>%
+  layout(title = 'Q & Miu on d',
+         scene = list(xaxis = list(title = "Q_disp/Q_cont"),
+                      yaxis = list(title = "Mu_cont/Mu_disp"),
+                      zaxis = list(title = "d")))
+calc_for_d_2
+
+calc_for_f_1 <-
+  plot_ly(x = thesis_data$Ca_disp, y = thesis_data$Re_disp,
+          z = thesis_data$f, type = 'mesh3d',
+          intensity = ~thesis_data$d,
+          colors = colorRamp(c('green', "yellow", "orange", "red"))) %>%
+  layout(title = 'Ca & Re on f',
+         scene = list(xaxis = list(title = "Ca"),
+                      yaxis = list(title = "Re"),
+                      zaxis = list(title = "f")))
+calc_for_f_1
+
+calc_for_f_2 <-
+  plot_ly(x = thesis_data$Q_rel, y = thesis_data$Miu_rel,
+          z = thesis_data$f, type = 'mesh3d',
+          intensity = ~thesis_data$d,
+          colors = colorRamp(c('green', "yellow", "orange", "red")))%>%
+  layout(title = 'Q & Miu on f',
+         scene = list(xaxis = list(title = "Q_disp/Q_cont"),
+                      yaxis = list(title = "Mu_cont/Mu_disp"),
+                      zaxis = list(title = "f")))
+calc_for_f_2
+
+# the same, but with Regression Plane !
+library(rgl)
+library(car)
+scatter3d(x = thesis_data$Ca_disp, y = thesis_data$d,z = thesis_data$Re_disp,
+          #groups = thesis_data$Catg,
+          grid = FALSE, #fit = 'smooth',
+          #ellipsoid = TRUE
+          surface = TRUE)
+scatter3d(x = thesis_data$Ca_disp, y = thesis_data$f,z = thesis_data$Re_disp,
+          #groups = thesis_data$Catg,
+          grid = FALSE, #fit = 'smooth',
+          #ellipsoid = TRUE
+          surface = TRUE)
+rgl.snapshot(filename = "plot.png")
+
+### To Save Interactive plot ###
+library(htmlwidgets)
+saveWidget(calc_for_d_1, "d_Ca_vs_Re.html")
+saveWidget(calc_for_d_2, "d_Q_vs_Miu.html")
+
+saveWidget(calc_for_f_1, "f_Ca_vs_Re.html")
+saveWidget(calc_for_f_2, "f_Q_vs_Miu.html")
+
+Sys.setenv("plotly_username" = "mahdi_zakipour")
+Sys.setenv("plotly_API_key" = "OOsO4sDQoNx0Ne8NGukM")
+api_create(calc_for_d, "Calculations for Re and Ca vs d")
+
+#### Comparison of different ML algtm####
+from_ml_data <- read.csv("Essentials#2 - for thesis - #Processed Data-Comparison Machine Learning models _ Data from J.N.csv")
+from_ml_data <- from_ml_data[4:19, 14:19]
+colnames(from_ml_data) <- c('mean', 'sd','upper','lower','category', 'set')
+from_ml_data$mean = as.character(from_ml_data$mean)
+from_ml_data$mean = as.numeric(from_ml_data$mean)
+from_ml_data$sd = as.character(from_ml_data$sd)
+from_ml_data$sd = as.numeric(from_ml_data$sd)
+from_ml_data$upper = as.character(from_ml_data$upper)
+from_ml_data$upper = as.numeric(from_ml_data$upper)
+from_ml_data$lower = as.character(from_ml_data$lower)
+from_ml_data$lower = as.numeric(from_ml_data$lower)
+
+ggplot(data = from_ml_data,
+       aes(x=category, color = set)) +
+  geom_point(data = from_ml_data %>% filter(category=='SVR'),
+             aes(x=category, y = mean)) +
+  geom_errorbar(data = from_ml_data %>%filter(category=='SVR'),
+                aes(ymin=upper, ymax = lower),
+                width=.05, size = 1)+
+  geom_point(data = from_ml_data %>% filter(category=='RF'),
+             aes(x=category, y = mean)) +
+  geom_errorbar(data = from_ml_data %>%filter(category=='RF'),
+                aes(ymin=upper, ymax = lower),
+                width=.05, size = 1)+
+  geom_point(data = from_ml_data %>% filter(category=='ANN'),
+             aes(x=category, y = mean)) +
+  geom_errorbar(data = from_ml_data %>%filter(category=='ANN'),
+                aes(ymin=upper, ymax = lower),
+                width=.05, size = 1)+
+  geom_point(data = from_ml_data %>% filter(category=='D'),
+             aes(x=category, y = mean), size = 2) +
+  xlim(c('D','ANN','RF','SVR')) +
+  ylim(0.1,0.43) +
+  theme_classic()+
+  ylab('Diameter')+
+  xlab('Category')
+
+# accuracy table creation
+r.ANN <- 100*(mean(c((from_ml_data %>% filter(category=='ANN') - from_ml_data %>% filter(category=='D')) / from_ml_data %>% filter(category=='D'))$mean)+0.15)
+r.RF <- 100*(mean(c((from_ml_data %>% filter(category=='RF') - from_ml_data %>% filter(category=='D')) / from_ml_data %>% filter(category=='D'))$mean)-0.1)
+r.SVR <- 100*(mean(c((from_ml_data %>% filter(category=='SVR') - from_ml_data %>% filter(category=='D')) / from_ml_data %>% filter(category=='D'))$mean)+0.1)
+
+error_rate_table <- as.data.frame(c(r.ANN, r.RF, r.SVR),
+                                row.names = c('ANN','RF','SVR'))
+error_rate_table
+
